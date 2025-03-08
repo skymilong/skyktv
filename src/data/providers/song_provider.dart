@@ -126,14 +126,8 @@ class SongProvider extends ChangeNotifier {
       case SortOrder.byName:
         _filteredSongs.sort((a, b) => a.title.compareTo(b.title));
         break;
-      case SortOrder.byArtist:
-        _filteredSongs.sort((a, b) => a.artist.compareTo(b.artist));
-        break;
-      case SortOrder.byAddedDate:
-        _filteredSongs.sort((a, b) => b.addedDate.compareTo(a.addedDate));
-        break;
-      case SortOrder.byPopularity:
-        _filteredSongs.sort((a, b) => b.popularity.compareTo(a.popularity));
+      case SortOrder.byAddedDateDesc:
+        _filteredSongs.sort((a, b) => b.addedTime.compareTo(a.addedTime));
         break;
     }
   }

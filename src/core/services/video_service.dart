@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:better_player/better_player.dart';
+import '../../data/models/song.dart';
 import '../constants/enum_types.dart';
-import '../models/song.dart';
 
 class VideoService extends ChangeNotifier {
   static final VideoService _instance = VideoService._internal();
@@ -13,8 +14,8 @@ class VideoService extends ChangeNotifier {
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   double _volume = 1.0;
-  String? _currentVideoUrl;
-  String? _nextVideoUrl;
+  String? _currentsongUrl;
+  String? _nextsongUrl;
   BetterPlayerController? _preloadController;
   String? _error;
 
@@ -27,20 +28,20 @@ class VideoService extends ChangeNotifier {
     bool looping = false,
     bool showControls = true,
   }) async {
-    if (song.videoUrl == null) {
+    if (song.songUrl == null) {
       _error = '视频地址不存在';
       notifyListeners();
       return;
     }
 
-    if (song.videoUrl == _currentVideoUrl && _controller != null) {
+    if (song.songUrl == _currentsongUrl && _controller != null) {
       // 如果是同一个视频且控制器存在，直接返回
       return;
     }
 
     try {
       // 释放旧的控制器
-      await _controller?.dispose();
+      _controller?.dispose();
       _error = null;
 
       final betterPlayerConfiguration = BetterPlayerConfiguration(
@@ -66,14 +67,6 @@ class VideoService extends ChangeNotifier {
           loadingWidget: const Center(
             child: CircularProgressIndicator(),
           ),
-          errorBuilder: (context, errorMessage) {
-            return Center(
-              child: Text(
-                errorMessage,
-                style: const TextStyle(color: Colors.white),
-              ),
-            );
-          },
         ),
         deviceOrientationsAfterFullScreen: [
           DeviceOrientation.portraitUp,
@@ -87,14 +80,14 @@ class VideoService extends ChangeNotifier {
 
       final dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.network,
-        song.videoUrl!,
-        videoFormat: _getVideoFormat(song.videoUrl!),
+        song.songUrl!,
+        videoFormat: _getVideoFormat(song.songUrl!),
         cacheConfiguration: const BetterPlayerCacheConfiguration(
           useCache: true,
           maxCacheSize: 100 * 1024 * 1024, // 100MB
           maxCacheFileSize: 10 * 1024 * 1024, // 10MB per file
         ),
-        qualities: _buildQualities(song.quality),
+        resolutions: _buildResolutions(song.quality),
         notificationConfiguration: const BetterPlayerNotificationConfiguration(
           showNotification: true,
           title: "当前播放",
@@ -104,7 +97,7 @@ class VideoService extends ChangeNotifier {
 
       _controller = BetterPlayerController(betterPlayerConfiguration);
       await _controller!.setupDataSource(dataSource);
-      _currentVideoUrl = song.videoUrl;
+      _currentsongUrl = song.songUrl;
 
       // 监听播放状态
       _controller!.addEventsListener((event) {
@@ -127,7 +120,7 @@ class VideoService extends ChangeNotifier {
               _position = event.parameters!['progress'] as Duration;
             }
             break;
-          case BetterPlayerEventType.error:
+          case BetterPlayerEventType.exception:
             _status = PlaybackStatus.error;
             _error = event.parameters?['error'] ?? '视频播放出错';
             break;
@@ -147,15 +140,15 @@ class VideoService extends ChangeNotifier {
   }
 
   /// 预加载下一个视频
-  Future<void> preloadVideo(String? videoUrl) async {
-    if (videoUrl == null || videoUrl == _currentVideoUrl || videoUrl == _nextVideoUrl) {
+  Future<void> preloadVideo(String? songUrl) async {
+    if (songUrl == null || songUrl == _currentsongUrl || songUrl == _nextsongUrl) {
       return;
     }
 
-    _nextVideoUrl = videoUrl;
+    _nextsongUrl = songUrl;
     
     try {
-      await _preloadController?.dispose();
+      _preloadController?.dispose();
       
       final config = BetterPlayerConfiguration(
         autoPlay: false,
@@ -164,8 +157,8 @@ class VideoService extends ChangeNotifier {
       
       final dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.network,
-        videoUrl,
-        videoFormat: _getVideoFormat(videoUrl),
+        songUrl,
+        videoFormat: _getVideoFormat(songUrl),
         cacheConfiguration: const BetterPlayerCacheConfiguration(
           useCache: true,
           maxCacheSize: 100 * 1024 * 1024,
@@ -179,6 +172,38 @@ class VideoService extends ChangeNotifier {
       await _preloadController!.pause();
     } catch (e) {
       debugPrint('预加载视频失败: $e');
+    }
+  }
+
+  /// 内部方法：预加载下一个视频
+  Future<void> _preloadNextVideo() async {
+    if (_nextsongUrl == null) return;
+    
+    try {
+      _preloadController?.dispose();
+      
+      final config = BetterPlayerConfiguration(
+        autoPlay: false,
+        handleLifecycle: false,
+      );
+      
+      final dataSource = BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network,
+        _nextsongUrl!,
+        videoFormat: _getVideoFormat(_nextsongUrl!),
+        cacheConfiguration: const BetterPlayerCacheConfiguration(
+          useCache: true,
+          maxCacheSize: 100 * 1024 * 1024,
+          maxCacheFileSize: 10 * 1024 * 1024,
+        ),
+      );
+
+      _preloadController = BetterPlayerController(config);
+      await _preloadController!.setupDataSource(dataSource);
+      // 预加载但不播放
+      await _preloadController!.pause();
+    } catch (e) {
+      debugPrint('预加载下一个视频失败: $e');
     }
   }
 
@@ -196,32 +221,37 @@ class VideoService extends ChangeNotifier {
     }
   }
 
-  List<BetterPlayerDataSourceQuality> _buildQualities(String? quality) {
-    if (quality == null) return [];
+  Map<String, String>? _buildResolutions(String? quality) {
+    if (quality == null) return null;
 
-    final qualities = <BetterPlayerDataSourceQuality>[];
+    final Map<String, String> resolutions = {};
+    final baseUrl = _currentsongUrl?.replaceAll(RegExp(r'_\d+p'), '');
     
+    if (baseUrl == null) return null;
+
     if (quality == '1080p') {
-      qualities.addAll([
-        BetterPlayerDataSourceQuality(1080, "1080p"),
-        BetterPlayerDataSourceQuality(720, "720p"),
-        BetterPlayerDataSourceQuality(480, "480p"),
-      ]);
+      resolutions.addAll({
+        '1080p': baseUrl.replaceAll('.mp4', '_1080p.mp4'),
+        '720p': baseUrl.replaceAll('.mp4', '_720p.mp4'),
+        '480p': baseUrl.replaceAll('.mp4', '_480p.mp4'),
+      });
     } else if (quality == '720p') {
-      qualities.addAll([
-        BetterPlayerDataSourceQuality(720, "720p"),
-        BetterPlayerDataSourceQuality(480, "480p"),
-      ]);
+      resolutions.addAll({
+        '720p': baseUrl.replaceAll('.mp4', '_720p.mp4'),
+        '480p': baseUrl.replaceAll('.mp4', '_480p.mp4'),
+      });
     } else {
-      qualities.add(BetterPlayerDataSourceQuality(480, "480p"));
+      resolutions['480p'] = baseUrl.replaceAll('.mp4', '_480p.mp4');
     }
 
-    return qualities;
+    return resolutions;
   }
 
   Future<void> play() async {
+    if (_controller == null) return;
+    
     try {
-      await _controller?.play();
+      await _controller!.play();
     } catch (e) {
       _error = '播放失败: $e';
       _status = PlaybackStatus.error;
@@ -230,8 +260,10 @@ class VideoService extends ChangeNotifier {
   }
 
   Future<void> pause() async {
+    if (_controller == null) return;
+    
     try {
-      await _controller?.pause();
+      await _controller!.pause();
     } catch (e) {
       _error = '暂停失败: $e';
       notifyListeners();
@@ -239,8 +271,10 @@ class VideoService extends ChangeNotifier {
   }
 
   Future<void> seekTo(Duration position) async {
+    if (_controller == null) return;
+    
     try {
-      await _controller?.seekTo(position);
+      await _controller!.seekTo(position);
     } catch (e) {
       _error = '跳转失败: $e';
       notifyListeners();
@@ -248,9 +282,11 @@ class VideoService extends ChangeNotifier {
   }
 
   Future<void> setVolume(double volume) async {
+    if (_controller == null) return;
+    
     try {
       _volume = volume.clamp(0.0, 1.0);
-      await _controller?.setVolume(_volume);
+      await _controller!.setVolume(_volume);
       notifyListeners();
     } catch (e) {
       _error = '设置音量失败: $e';
@@ -259,8 +295,10 @@ class VideoService extends ChangeNotifier {
   }
 
   Future<void> enterFullScreen() async {
+    if (_controller == null) return;
+    
     try {
-      await _controller?.enterFullScreen();
+      _controller!.enterFullScreen();
     } catch (e) {
       _error = '进入全屏失败: $e';
       notifyListeners();
@@ -268,8 +306,10 @@ class VideoService extends ChangeNotifier {
   }
 
   Future<void> exitFullScreen() async {
+    if (_controller == null) return;
+    
     try {
-      await _controller?.exitFullScreen();
+      _controller!.exitFullScreen();
     } catch (e) {
       _error = '退出全屏失败: $e';
       notifyListeners();
@@ -277,9 +317,11 @@ class VideoService extends ChangeNotifier {
   }
 
   Future<void> retry() async {
+    if (_controller == null) return;
+    
     try {
       _error = null;
-      await _controller?.retry();
+      await _controller!.retryDataSource();
       notifyListeners();
     } catch (e) {
       _error = '重试失败: $e';
@@ -298,8 +340,26 @@ class VideoService extends ChangeNotifier {
 
   @override
   void dispose() {
-    _controller?.dispose();
-    _preloadController?.dispose();
-    super.dispose();
+    try {
+      _controller?.dispose();
+      _preloadController?.dispose();
+    } catch (e) {
+      debugPrint('Dispose error: $e');
+    } finally {
+      super.dispose();
+    }
+  }
+
+  /// 获取枚举的显示名称
+  static String getEnumDisplayName(dynamic enumValue) {
+    if (enumValue == null) return '';
+    return enumValue.toString().split('.').last;
+  }
+
+  /// 获取枚举的本地化名称
+  static String getLocalizedName(dynamic enumValue) {
+    final name = getEnumDisplayName(enumValue);
+    // 这里可以根据实际需求返回本地化的名称
+    return name;
   }
 } 

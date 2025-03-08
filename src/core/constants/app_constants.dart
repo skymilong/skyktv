@@ -34,7 +34,7 @@ class AppConstants {
   static const int kReceiveTimeout = 30000;    // 30秒
   
   // 播放器设置
-  static const String kDefaultVolume = 'default_volume';
+  static const double kDefaultVolume = 30.0;
   static const String kAutoPlay = 'auto_play';
   static const String kRepeatMode = 'repeat_mode';
   static const String kShuffleMode = 'shuffle_mode';

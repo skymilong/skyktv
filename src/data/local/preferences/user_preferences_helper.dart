@@ -4,6 +4,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/enum_types.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../models/user_preferences.dart';
+
 /// 用户偏好设置帮助类
 /// 
 /// 管理用户偏好设置，如主题、排序方式等
@@ -41,6 +43,9 @@ class UserPreferencesHelper {
   /// 返回当前的排序方式
   static SortOrder getSortOrder() {
     final value = _prefs?.getInt('sort_order') ?? 0;
+    if (value >= SortOrder.values.length) {
+      return SortOrder.values[0]; // 返回默认值
+    }
     return SortOrder.values[value];
   }
   
@@ -285,5 +290,42 @@ class UserPreferencesHelper {
   /// 清空所有设置
   static Future<void> clearAllSettings() async {
     await _prefs?.clear();
+  }
+  
+  /// 获取所有用户偏好设置
+  /// 
+  /// 返回包含所有设置的 UserPreferences 对象
+  static Future<UserPreferences> getPreferences() async {
+    return UserPreferences(
+      themeMode: getThemeMode(),
+      autoDownload: getAutoDownload(),
+      showLyrics: _prefs?.getBool('show_lyrics') ?? true,
+      showNotification: _prefs?.getBool('show_notification') ?? true,
+      defaultVolume: _prefs?.getDouble('default_volume') ?? 0.5,
+      defaultSortOrder: getSortOrder(),
+      defaultViewMode: getViewMode(),
+      defaultPlayMode: getPlayMode(),
+      libraryVersion: _prefs?.getInt('library_version') ?? 0,
+      lastSyncTime: DateTime.fromMillisecondsSinceEpoch(
+        _prefs?.getInt('last_sync_time') ?? 0
+      ),
+    );
+  }
+
+  /// 保存所有用户偏好设置
+  /// 
+  /// [preferences] 要保存的设置对象
+  static Future<void> savePreferences(UserPreferences preferences) async {
+    await setThemeMode(preferences.themeMode);
+    await setAutoDownload(preferences.autoDownload);
+    await _prefs?.setBool('show_lyrics', preferences.showLyrics);
+    await _prefs?.setBool('show_notification', preferences.showNotification);
+    await _prefs?.setDouble('default_volume', preferences.defaultVolume);
+    await setSortOrder(preferences.defaultSortOrder);
+    await setViewMode(preferences.defaultViewMode);
+    await setPlayMode(preferences.defaultPlayMode);
+    await _prefs?.setInt('library_version', preferences.libraryVersion);
+    await _prefs?.setInt('last_sync_time', 
+        preferences.lastSyncTime!.millisecondsSinceEpoch);
   }
 }

@@ -105,14 +105,6 @@ enum SortType {
   custom,
 }
 
-/// 视图模式
-enum ViewMode {
-  /// 列表视图
-  list,
-  
-  /// 网格视图
-  grid
-}
 
 /// 主题模式
 enum AppThemeMode {
@@ -229,4 +221,21 @@ enum VideoEffect {
   contrast,      // 对比度
   saturation,    // 饱和度
   blur,          // 模糊
+}
+
+/// 建议的枚举定义
+enum SortOrder {
+  byName,    // 按名称升序
+  byNameDesc,   // 按名称降序
+  byAddedDate,    // 按日期升序
+  byAddedDateDesc,   // 按日期降序
+  byPopularity, // 按欢迎度
+  byArtist, // 按艺术家
+  custom      // 自定义排序
+}
+
+enum ViewMode {
+  list,       // 列表视图
+  grid,       // 网格视图
+  card        // 卡片视图
 }

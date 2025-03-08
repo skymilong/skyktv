@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/models/song.dart';
+import '../../../data/models/song.dart';
 import '../../song_library/widgets/song_list.dart';
 import '../widgets/split_view.dart';
 
@@ -73,11 +73,19 @@ class _LeftPanel extends StatelessWidget {
         id: '1',
         title: '测试歌曲 1',
         artist: '演唱者 1',
+        categories: {"测试1"},
+        pinyin: "ceshigequ1",
+        pinyinFirst: "CSGQ1",
+        album : "未知专辑",
       ),
       Song(
         id: '2',
-        title: '测试歌曲 2',
-        artist: '演唱者 2',
+        title: '测试歌曲2',
+        artist: '演唱者2',
+        categories: {"测试1"},
+        pinyin: "ceshigequ2",
+        pinyinFirst: "CSGQ2",
+        album : "未知专辑",
       ),
     ];
 

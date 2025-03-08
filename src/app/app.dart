@@ -7,7 +7,6 @@ import 'theme.dart';
 /// 定义应用的主题、路由和初始设置
 class KTVApp extends StatelessWidget {
   const KTVApp({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -19,5 +18,6 @@ class KTVApp extends StatelessWidget {
       onGenerateRoute: AppRoutes.onGenerateRoute,
       debugShowCheckedModeBanner: false, // 移除调试标签
     );
+
   }
 }

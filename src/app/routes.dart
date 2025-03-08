@@ -19,8 +19,8 @@ class AppRoutes {
   static const String search = '/search';
 
   // 路由生成器
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
-    switch (settings.name) {
+  static Route<dynamic> onGenerateRoute(RouteSettings routeSettings) {
+    switch (routeSettings.name) {
       case main:
         return MaterialPageRoute(builder: (_) => const MainScreen());
       case settings:
@@ -28,12 +28,12 @@ class AppRoutes {
       case songLibrary:
         return MaterialPageRoute(builder: (_) => const SongLibraryScreen());
       case songDetail:
-        final songId = settings.arguments as String;
+        final songId = routeSettings.arguments as String;
         return MaterialPageRoute(
           builder: (_) => SongDetailScreen(songId: songId),
         );
       case player:
-        final songId = settings.arguments as String?;
+        final songId = routeSettings.arguments as String?;
         return MaterialPageRoute(
           builder: (_) => PlayerScreen(initialSongId: songId),
         );
@@ -44,7 +44,7 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => Scaffold(
             body: Center(
-              child: Text('找不到路由: ${settings.name}'),
+              child: Text('找不到路由: ${routeSettings.name}'),
             ),
           ),
         );

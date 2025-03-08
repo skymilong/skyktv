@@ -1,28 +1,26 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../local/database/song_favorite_dao.dart';
 import '../models/song.dart';
 import '../local/database/song_dao.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../../core/constants/enum_types.dart';
-import '../../core/utils/pinyin_helper.dart';
+import '../../core/utils/pinyin_utils.dart';
 
 /// 歌曲仓库
 /// 
 /// 管理歌曲数据的获取、存储和同步
 class SongRepository {
-  final SongDao _songDao;
-  
-  /// 构造函数
-  SongRepository(this._songDao);
-  
+
+
   /// 获取所有歌曲
   Future<List<Song>> getAllSongs() async {
-    return await _songDao.getAllSongs();
+    return await SongDao.getAllSongs();
   }
   
   /// 获取歌曲详情
   Future<Song?> getSongById(String id) async {
-    return await _songDao.getSongById(id);
+    return await SongDao.getSong(id);
   }
   
   /// 搜索歌曲
@@ -31,7 +29,7 @@ class SongRepository {
       return [];
     }
     
-    final songs = await _songDao.getAllSongs();
+    final songs = await SongDao.getAllSongs();
     final lowercaseQuery = query.toLowerCase();
     
     return songs.where((song) {
@@ -44,7 +42,7 @@ class SongRepository {
   
   /// 按字母获取歌曲
   Future<List<Song>> getSongsByFirstLetter(String letter) async {
-    final songs = await _songDao.getAllSongs();
+    final songs = await SongDao.getAllSongs();
     return songs.where((song) {
       return song.pinyinFirst.startsWith(letter.toUpperCase());
     }).toList();
@@ -52,7 +50,7 @@ class SongRepository {
   
   /// 按类别获取歌曲
   Future<List<Song>> getSongsByCategory(String category) async {
-    final songs = await _songDao.getAllSongs();
+    final songs = await SongDao.getAllSongs();
     if (category == '全部') {
       return songs;
     }
@@ -63,13 +61,13 @@ class SongRepository {
   
   /// 获取收藏的歌曲
   Future<List<Song>> getFavoriteSongs() async {
-    final songs = await _songDao.getAllSongs();
-    return songs.where((song) => song.isFavorite).toList();
+    final songs = await SongDao.getAllSongs();
+    return songs.where((song) => song.isDownloaded).toList();
   }
   
   /// 获取已下载的歌曲
   Future<List<Song>> getDownloadedSongs() async {
-    final songs = await _songDao.getAllSongs();
+    final songs = await SongDao.getAllSongs();
     return songs.where((song) => song.isDownloaded).toList();
   }
   
@@ -80,23 +78,23 @@ class SongRepository {
     String? localPath,
     DownloadStatus status,
   ) async {
-    final song = await _songDao.getSongById(songId);
+    final song = await SongDao.getSong(songId);
     if (song != null) {
       final updatedSong = song.copyWith(
         isDownloaded: isDownloaded,
         localPath: localPath,
         downloadStatus: status,
       );
-      await _songDao.updateSong(updatedSong);
+      await SongDao.updateSong(updatedSong);
     }
   }
   
   /// 更新歌曲收藏状态
   Future<void> updateSongFavoriteStatus(String songId, bool isFavorite) async {
-    final song = await _songDao.getSongById(songId);
+    final song = await SongDao.getSong(songId);
     if (song != null) {
       final updatedSong = song.copyWith(isFavorite: isFavorite);
-      await _songDao.updateSong(updatedSong);
+      await SongDao.updateSong(updatedSong);
     }
   }
   
@@ -136,10 +134,10 @@ class SongRepository {
       final songs = songsData.map((json) {
         // 确保每首歌都有拼音信息
         if (!json.containsKey('pinyin') || json['pinyin'] == null) {
-          json['pinyin'] = PinyinHelper.toPinyin(json['title']);
+          json['pinyin'] = PinyinUtils.toPinyin(json['title']);
         }
         if (!json.containsKey('pinyinFirst') || json['pinyinFirst'] == null) {
-          json['pinyinFirst'] = PinyinHelper.getFirstLetters(json['title']);
+          json['pinyinFirst'] = PinyinUtils.getFirstLetters(json['title']);
         }
         
         return Song.fromJson(json);
@@ -148,8 +146,8 @@ class SongRepository {
       onProgress('正在保存曲库数据...', 0.8);
       
       // 清空并重建数据库
-      await _songDao.deleteAllSongs();
-      await _songDao.insertSongs(songs);
+      await SongDao.clearAllSongs();
+      await SongDao.saveSongs(songs);
       
       onProgress('同步完成！', 1.0);
       return true;
@@ -162,7 +160,7 @@ class SongRepository {
   
   /// 按排序方式获取歌曲
   Future<List<Song>> getSongsBySortOrder(SortOrder sortOrder) async {
-    final songs = await _songDao.getAllSongs();
+    final songs = await SongDao.getAllSongs();
     
     switch (sortOrder) {
       case SortOrder.byName:
@@ -170,7 +168,7 @@ class SongRepository {
       case SortOrder.byArtist:
         return songs..sort((a, b) => a.artist.compareTo(b.artist));
       case SortOrder.byAddedDate:
-        return songs..sort((a, b) => b.addedDate.compareTo(a.addedDate));
+        return songs..sort((a, b) => b.addedTime.compareTo(a.addedTime));
       case SortOrder.byPopularity:
         return songs..sort((a, b) => b.popularity.compareTo(a.popularity));
       default:
@@ -180,7 +178,7 @@ class SongRepository {
   
   /// 获取所有歌曲类别
   Future<List<String>> getAllCategories() async {
-    final songs = await _songDao.getAllSongs();
+    final songs = SongDao.getAllSongs();
     final Set<String> categories = {};
     
     for (final song in songs) {
@@ -192,16 +190,16 @@ class SongRepository {
   
   /// 获取歌曲总数
   Future<int> getSongCount() async {
-    return await _songDao.getSongCount();
+    return SongDao.getSongCount();
   }
   
   /// 获取已下载歌曲数量
   Future<int> getDownloadedSongCount() async {
-    return await _songDao.getDownloadedSongCount();
+    return await SongDao.getDownloadedSongs().length;
   }
   
   /// 获取收藏歌曲数量
   Future<int> getFavoriteSongCount() async {
-    return await _songDao.getFavoriteSongCount();
+    return await FavoriteSongDao.getFavoriteSongCount();
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../models/song.dart';
+import '../../data/models/song.dart';
+import '../constants/enum_types.dart';
 import 'storage_service.dart';
 import 'download_service.dart';
 import '../constants/app_constants.dart';
@@ -31,7 +32,7 @@ class SongService extends ChangeNotifier {
         'songs',
         [],
       );
-      _songs = songsJson.map((json) => Song.fromJson(json)).toList();
+      _songs = songsJson!.map((json) => Song.fromJson(json)).toList();
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading songs: $e');
@@ -55,11 +56,11 @@ class SongService extends ChangeNotifier {
   // 加载收藏列表
   Future<void> _loadFavorites() async {
     try {
-      _favorites = await _storage.getFromBox<List<String>>(
+      _favorites = (await _storage.getFromBox<List<String>>(
         AppConstants.kFavoritesBoxName,
         'favorites',
         [],
-      );
+      ))!;
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading favorites: $e');
@@ -89,7 +90,7 @@ class SongService extends ChangeNotifier {
   }
 
   // 删除歌曲
-  Future<void> removeSong(String songId) async {
+  Future<void> removeSong(String songId , MediaType type) async {
     _songs.removeWhere((song) => song.id == songId);
     await _saveSongs();
     // 如果歌曲在收藏列表中，也需要移除
@@ -97,7 +98,7 @@ class SongService extends ChangeNotifier {
       await removeFavorite(songId);
     }
     // 删除下载的文件
-    await _download.deleteSong(songId);
+    await _download.deleteSong(songId, type);
     notifyListeners();
   }
 

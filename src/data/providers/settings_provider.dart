@@ -8,7 +8,6 @@ import '../../core/constants/enum_types.dart';
 /// 
 /// 管理应用设置和曲库同步
 class SettingsProvider extends ChangeNotifier {
-  final UserPreferencesHelper _preferencesHelper;
   final SongRepository _songRepository;
   
   /// 用户偏好设置
@@ -36,7 +35,7 @@ class SettingsProvider extends ChangeNotifier {
   int _favoriteSongCount = 0;
   
   /// 构造函数
-  SettingsProvider(this._preferencesHelper, this._songRepository) {
+  SettingsProvider(this._songRepository) {
     _loadPreferences();
     _loadCounts();
   }
@@ -68,10 +67,7 @@ class SettingsProvider extends ChangeNotifier {
   /// 加载用户偏好设置
   Future<void> _loadPreferences() async {
     try {
-      final prefs = await _preferencesHelper.getPreferences();
-      if (prefs != null) {
-        _preferences = prefs;
-      }
+      _preferences = await UserPreferencesHelper.getPreferences();
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading preferences: $e');
@@ -93,7 +89,7 @@ class SettingsProvider extends ChangeNotifier {
   /// 保存用户偏好设置
   Future<void> savePreferences(UserPreferences preferences) async {
     try {
-      await _preferencesHelper.savePreferences(preferences);
+      await UserPreferencesHelper.savePreferences(preferences);
       _preferences = preferences;
       notifyListeners();
     } catch (e) {

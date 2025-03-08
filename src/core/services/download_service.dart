@@ -54,9 +54,9 @@ class DownloadService {
   /// [extension] 文件扩展名，默认为mp3
   /// 
   /// 返回歌曲是否已下载
-  Future<bool> isSongDownloaded(String songId, {String extension = 'mp3'}) async {
-    final filePath = await FileUtils.getSongFilePath(songId, extension: extension);
-    return await FileUtils.fileExists(filePath);
+  Future<bool> isSongDownloaded(String songId, MediaType type, {String extension = 'mp3'}) async {
+    final filePath = await FileUtils.getMediaFilePath(songId, type,extension: extension);
+    return await FileUtils.exists(filePath);
   }
   
   /// 下载歌曲
@@ -72,6 +72,7 @@ class DownloadService {
   Future<bool> downloadSong({
     required String songId,
     required String url,
+    required MediaType type,
     Function(double)? onProgress,
     Function(String)? onComplete,
     Function(String)? onError,
@@ -87,7 +88,7 @@ class DownloadService {
       _downloadStatus[songId] = DownloadStatus.pending;
       
       // 获取文件路径
-      final filePath = await FileUtils.getSongFilePath(songId, extension: extension);
+      final filePath = await FileUtils.getMediaFilePath(songId, type, extension: extension);
       
       // 创建取消令牌
       final cancelToken = CancelToken();
@@ -143,7 +144,7 @@ class DownloadService {
   /// 返回是否成功下载
   Future<bool> downloadLyrics(String songId, String url) async {
     try {
-      final filePath = await FileUtils.getLyricsFilePath(songId);
+      final filePath = await FileUtils.getLyricFilePath(songId);
       
       final response = await _dio.get(
         url,
@@ -192,18 +193,18 @@ class DownloadService {
   /// [extension] 文件扩展名，默认为mp3
   /// 
   /// 返回是否成功删除
-  Future<bool> deleteSong(String songId, {String extension = 'mp3'}) async {
+  Future<bool> deleteSong(String songId, MediaType type, {String extension = 'mp3'}) async {
     try {
       // 取消正在进行的下载
       cancelDownload(songId);
       
       // 删除歌曲文件
-      final filePath = await FileUtils.getSongFilePath(songId, extension: extension);
-      final deleted = await FileUtils.deleteFile(filePath);
+      final filePath = await FileUtils.getMediaFilePath(songId, type, extension: extension);
+      final deleted = await FileUtils.delete(filePath);
       
       // 删除歌词文件
-      final lyricsPath = await FileUtils.getLyricsFilePath(songId);
-      await FileUtils.deleteFile(lyricsPath);
+      final lyricsPath = await FileUtils.getLyricFilePath(songId);
+      await FileUtils.delete(lyricsPath);
       
       // 更新状态
       if (deleted) {
@@ -220,7 +221,7 @@ class DownloadService {
   /// 清空所有下载
   /// 
   /// 返回是否成功清空
-  Future<bool> clearAllDownloads() async {
+  Future<bool> clearAllDownloads(MediaType type) async {
     try {
       // 取消所有正在进行的下载
       for (final songId in _downloadTasks.keys.toList()) {
@@ -228,7 +229,7 @@ class DownloadService {
       }
       
       // 清空歌曲目录
-      final songsDir = await FileUtils.getSongsDirectory();
+      final songsDir = await FileUtils.getMediaDirectory(type);
       final cleared = await FileUtils.clearDirectory(songsDir.path);
       
       // 清空歌词目录
@@ -248,9 +249,9 @@ class DownloadService {
   /// 获取下载目录大小
   /// 
   /// 返回下载目录大小（字节）
-  Future<int> getDownloadSize() async {
+  Future<int> getDownloadSize(MediaType type) async {
     try {
-      final songsDir = await FileUtils.getSongsDirectory();
+      final songsDir = await FileUtils.getMediaDirectory(type);
       final lyricsDir = await FileUtils.getLyricsDirectory();
       
       final songsSize = await FileUtils.getDirectorySize(songsDir.path);
@@ -266,8 +267,8 @@ class DownloadService {
   /// 获取格式化的下载大小
   /// 
   /// 返回格式化的下载大小字符串
-  Future<String> getFormattedDownloadSize() async {
-    final size = await getDownloadSize();
+  Future<String> getFormattedDownloadSize(MediaType type) async {
+    final size = await getDownloadSize(type);
     return FileUtils.formatFileSize(size);
   }
 }

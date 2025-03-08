@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/services/player_service.dart';
 import '../../../core/services/video_service.dart';
-import '../../../core/models/song.dart';
+import '../../../data/models/song.dart';
 import '../../../core/constants/enum_types.dart';
 import '../widgets/player_controls.dart';
 import '../widgets/audio_visualizer.dart';

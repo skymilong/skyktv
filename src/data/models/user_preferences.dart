@@ -65,7 +65,7 @@ class UserPreferences extends Equatable {
     this.lastSyncTime,
     this.libraryVersion = 0,
     this.autoCheckUpdate = true,
-    this.defaultPlayMode = PlayMode.sequential,
+    this.defaultPlayMode = PlayMode.sequence,
     this.autoDownloadOnWifi = true,
     this.enableSoundEffects = true,
     this.enableVibration = true,
@@ -166,17 +166,17 @@ class UserPreferences extends Equatable {
 
   /// 解析播放模式
   static PlayMode _parsePlayMode(dynamic value) {
-    if (value == null) return PlayMode.sequential;
+    if (value == null) return PlayMode.sequence;
     if (value is int) {
       return PlayMode.values[value];
     }
     if (value is String) {
       return PlayMode.values.firstWhere(
         (e) => e.toString() == 'PlayMode.$value',
-        orElse: () => PlayMode.sequential,
+        orElse: () => PlayMode.sequence,
       );
     }
-    return PlayMode.sequential;
+    return PlayMode.sequence;
   }
 
   /// 创建一个新的UserPreferences实例，但更新部分属性

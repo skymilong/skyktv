@@ -3,9 +3,9 @@ import 'package:lpinyin/lpinyin.dart';
 /// 拼音处理工具类
 /// 
 /// 提供中文转拼音、获取拼音首字母等功能
-class PinyinHelper {
+class PinyinUtils {
   // 私有构造函数，防止实例化
-  PinyinHelper._();
+  PinyinUtils._();
   
   /// 将中文字符串转换为拼音
   /// 

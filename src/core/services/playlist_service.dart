@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import '../models/song.dart';
 import 'storage_service.dart';
 import '../constants/app_constants.dart';
 
@@ -23,16 +22,16 @@ class PlaylistService extends ChangeNotifier {
   // 加载播放列表
   Future<void> _loadPlaylist() async {
     try {
-      _playlist = await _storage.getFromBox<List<String>>(
+      _playlist = (await _storage.getFromBox<List<String>>(
         AppConstants.kPlaylistsBoxName,
         'current_playlist',
         [],
-      );
-      _currentIndex = await _storage.getFromBox<int>(
+      ))!;
+      _currentIndex = (await _storage.getFromBox<int>(
         AppConstants.kPlaylistsBoxName,
         'current_index',
         -1,
-      );
+      ))!;
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading playlist: $e');

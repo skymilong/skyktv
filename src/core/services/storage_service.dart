@@ -308,7 +308,17 @@ class StorageService {
   /// 重新加载SharedPreferences
   /// 
   /// 返回是否成功重新加载
-  Future<bool> reload() async {
-    return await _prefs?.reload() ?? false;
+  Future<bool> refreshSettings() async {
+    if (_prefs == null) {
+      throw StateError('App settings manager has not been initialized.');
+    }
+    try {
+      await _prefs!.reload();
+      debugPrint('Settings reload initiated.');
+      return true; // Assume success if no exception was thrown
+    } catch (e) {
+      debugPrint('Error reloading settings: $e');
+      return false; // Indicate failure if an exception occurred
+    }
   }
 }

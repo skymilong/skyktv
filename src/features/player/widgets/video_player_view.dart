@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:better_player/better_player.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock/wakelock.dart';
-import '../../../core/models/song.dart';
+import '../../../data/models/song.dart';
 import '../../../core/services/video_service.dart';
 import '../../../core/constants/enum_types.dart';
 

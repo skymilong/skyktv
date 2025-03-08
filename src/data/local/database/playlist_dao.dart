@@ -36,6 +36,16 @@ class PlaylistDao {
       return '';
     }
   }
+
+  static Future<String> createPlaylistFromOther(Playlist playlist) async {
+    try {
+      await AppDatabase.playlistsBox.put(playlist.id, playlist.toJson());
+      return playlist.id;
+    } catch (e) {
+      debugPrint('Error creating playlist: $e');
+      return '';
+    }
+  }
   
   /// 获取播放列表
   /// 

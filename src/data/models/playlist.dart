@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../core/constants/enum_types.dart';
 import 'song.dart';
 
 /// 播放列表模型类
@@ -6,31 +7,31 @@ import 'song.dart';
 /// 表示用户创建的歌曲播放列表
 class Playlist extends Equatable {
   /// 唯一标识符
-  final String id;
+  String id;
   
   /// 播放列表名称
-  final String name;
+  String name;
   
   /// 播放列表描述
-  final String description;
+  String description;
   
   /// 创建日期
-  final DateTime createdAt;
+  DateTime createdAt;
   
   /// 最后修改日期
-  final DateTime updatedAt;
+  DateTime updatedAt;
   
   /// 播放列表中的歌曲ID列表
-  final List<String> songIds;
+  List<String> songIds;
   
   /// 播放列表封面图片URL
-  final String? coverUrl;
+  String? coverUrl;
   
   /// 是否为系统默认播放列表
-  final bool isSystem;
+  bool isSystem;
 
   /// 构造函数
-  const Playlist({
+  Playlist({
     required this.id,
     required this.name,
     this.description = '',
@@ -106,7 +107,7 @@ class Playlist extends Equatable {
   }
 
   /// 从播放列表中移除歌曲
-  Playlist removeSong(String songId) {
+  Playlist removeSong(String songId, MediaType type) {
     if (!songIds.contains(songId)) {
       return this;
     }

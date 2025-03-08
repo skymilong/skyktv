@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import '../../../core/utils/pinyin_helper.dart';
+import '../../../core/utils/pinyin_utils.dart';
 import '../../models/song.dart';
 import 'app_database.dart';
 
@@ -90,8 +90,8 @@ class SongDao {
   /// 
   /// 返回是否更新成功
   static Future<bool> updateSongDownloadStatus(
-    String id, 
-    bool isDownloaded, 
+    String id,
+    bool isDownloaded,
     [String? localPath]
   ) async {
     try {
@@ -110,7 +110,17 @@ class SongDao {
       return false;
     }
   }
-  
+
+  static Future<bool> updateSong(Song song) async {
+    try {
+      await saveSong(song);
+      return true;
+    } catch (e) {
+      debugPrint('Error updating song: $e');
+      return false;
+    }
+  }
+
   /// 搜索歌曲
   /// 
   /// [query] 搜索关键词
@@ -146,7 +156,7 @@ class SongDao {
       
       return getAllSongs().where((song) {
         if (song.pinyinFirst.isEmpty) return false;
-        return song.pinyinFirst[0].toUpperCase() == uppercaseLetter;
+        return song.pinyinFirst.startsWith(uppercaseLetter);
       }).toList();
     } catch (e) {
       debugPrint('Error getting songs by first letter: $e');
@@ -159,7 +169,7 @@ class SongDao {
   /// 返回按首字母分组的歌曲映射表
   static Map<String, List<Song>> getSongsGroupedByFirstLetter() {
     try {
-      return PinyinHelper.groupByFirstLetter<Song>(
+      return PinyinUtils.groupByFirstLetter<Song>(
         getAllSongs(),
         (song) => song.title,
       );
@@ -181,8 +191,7 @@ class SongDao {
     
     try {
       return getAllSongs().where((song) {
-        return song.extraInfo.containsKey('category') && 
-               song.extraInfo['category'] == category;
+        return song.categories.contains(category);
       }).toList();
     } catch (e) {
       debugPrint('Error getting songs by category: $e');
@@ -277,4 +286,5 @@ class SongDao {
       return '[]';
     }
   }
+
 }

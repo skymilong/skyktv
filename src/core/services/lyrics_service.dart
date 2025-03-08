@@ -24,8 +24,8 @@ class LyricsService {
       }
 
       // 2. 检查本地文件
-      final lyricsPath = await FileUtils.getLyricsFilePath(songId);
-      if (await FileUtils.fileExists(lyricsPath)) {
+      final lyricsPath = await FileUtils.getLyricFilePath(songId);
+      if (await FileUtils.exists(lyricsPath)) {
         final content = await File(lyricsPath).readAsString();
         final lyrics = Lyrics.fromLrcContent(content);
         _cache[songId] = lyrics;
